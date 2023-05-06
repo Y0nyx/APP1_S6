@@ -13,6 +13,9 @@
 #include <cstring>
 #include <thread>
 
+#include <mutex>
+#include <condition_variable>
+
 namespace gif643 {
 
 const size_t    BPP         = 4;    // Bytes per pixel
@@ -21,6 +24,10 @@ const int       NUM_THREADS = 1;    // Default value, changed by argv.
 
 using PNGDataVec = std::vector<char>;
 using PNGDataPtr = std::shared_ptr<PNGDataVec>;
+
+// Add necessary variable to safely multi-thread the process
+std::mutex mtx_queue;
+std::condition_variable cv_queue;
 
 /// \brief Wraps callbacks from stbi_image_write
 //
@@ -224,7 +231,7 @@ public:
     /// These threads are joined and stopped at the destruction of the instance.
     /// 
     /// \param n_threads: Number of threads (default: NUM_THREADS)
-    Processor(int n_threads = NUM_THREADS):
+    Processor(int n_threads):
         should_run_(true)
     {
         if (n_threads <= 0) {
@@ -310,8 +317,19 @@ public:
         std::queue<TaskDef> queue;
         TaskDef def;
         if (parse(line_org, def)) {
-            std::cerr << "Queueing task '" << line_org << "'." << std::endl;
-            task_queue_.push(def);
+            //add lock guard on task_queue 
+            std::lock_guard<std::mutex> lock(mtx_queue);
+
+            if (png_cache_.count(line_org) == 0) {
+                std::cerr << "Queueing task '" << line_org << "'." << std::endl;
+                task_queue_.push(def);
+                cv_queue.notify_one();
+
+                png_cache_.insert({line_org, nullptr});
+
+            } else {
+                std::cerr << "Task already done" << std::endl;
+            }
         }
     }
 
@@ -326,11 +344,19 @@ private:
     void processQueue()
     {
         while (should_run_) {
-            if (!task_queue_.empty()) {
-                TaskDef task_def = task_queue_.front();
-                task_queue_.pop();
-                TaskRunner runner(task_def);
-                runner();
+            std::unique_lock<std::mutex> lock(mtx_queue);
+            cv_queue.wait(lock, [this]{return !task_queue_.empty(); });
+
+            TaskDef task_def = task_queue_.front();
+            task_queue_.pop();
+
+            lock.unlock();
+
+            TaskRunner runner(task_def);
+            runner();
+
+            if(task_queue_.empty()) {
+                should_run_ = false;
             }
         }
     }
@@ -343,15 +369,16 @@ int main(int argc, char** argv)
     using namespace gif643;
 
     std::ifstream file_in;
+    int num_threads = NUM_THREADS;
 
-    if (argc >= 2 && (strcmp(argv[1], "-") != 0)) {
-        file_in.open(argv[1]);
+    if (argc >= 3 && (strcmp(argv[2], "-") != 0)) {
+        file_in.open(argv[2]);
         if (file_in.is_open()) {
             std::cin.rdbuf(file_in.rdbuf());
-            std::cerr << "Using " << argv[1] << "..." << std::endl;
+            std::cerr << "Using " << argv[2] << "..." << std::endl;
         } else {
             std::cerr   << "Error: Cannot open '"
-                        << argv[1] 
+                        << argv[2] 
                         << "', using stdin (press CTRL-D for EOF)." 
                         << std::endl;
         }
@@ -359,11 +386,19 @@ int main(int argc, char** argv)
         std::cerr << "Using stdin (press CTRL-D for EOF)." << std::endl;
     }
 
-    // TODO: change the number of threads from args.
-    Processor proc;
+    //change the number of threads from args.
+    if (argc >= 2) {
+        try {
+        num_threads = std::stoi(argv[1]);
+        std::cerr << "Unsing num_threads equal to : " << num_threads << std::endl;
+        } catch (std::invalid_argument& e) {
+            std::cerr << "num_threads is invalid" << std::endl;
+        }
+    }
+
+    Processor proc(num_threads);
     
     while (!std::cin.eof()) {
-
         std::string line, line_org;
 
         std::getline(std::cin, line);
