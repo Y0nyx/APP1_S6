@@ -18,10 +18,12 @@ target_link_libraries(asset_conv nanosvg stb_image pthread)
 add_executable(lab_ex1 src/lab_ex1.cpp)
 add_executable(lab_ex2 src/lab_ex2.cpp)
 add_executable(lab_ex3 src/lab_ex3.cpp)
+add_executable(ftdt_yee src/ftdt_yee.cpp)
 
 target_link_libraries(lab_ex1 pthread)
 target_link_libraries(lab_ex2 pthread)
 target_link_libraries(lab_ex3 pthread)
+target_link_libraries(ftdt_yee pthread)
 
 # Lab - executable pour partie Python
 add_executable(lab_ex4 src/lab_ex4.cpp)
