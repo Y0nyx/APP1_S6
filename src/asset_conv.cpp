@@ -29,6 +29,8 @@ using PNGDataPtr = std::shared_ptr<PNGDataVec>;
 std::mutex mtx_queue;
 std::condition_variable cv_queue;
 
+std::mutex mtx_hashmap;
+
 /// \brief Wraps callbacks from stbi_image_write
 //
 // Provides a static method to give to stbi_write_png_to_func (rawCallback),
@@ -316,6 +318,10 @@ public:
     {
         std::queue<TaskDef> queue;
         TaskDef def;
+
+	// test mutex hashmap
+        std::lock_guard<std::mutex> lock(mtx_hashmap);
+
         if (parse(line_org, def)) {
             //add lock guard on task_queue 
             std::lock_guard<std::mutex> lock(mtx_queue);
@@ -371,8 +377,11 @@ int main(int argc, char** argv)
     std::ifstream file_in;
     int num_threads = NUM_THREADS;
 
+// L'erreur semble venir car top de thread ou mal utiliser
+
     if (argc >= 3 && (strcmp(argv[2], "-") != 0)) {
         file_in.open(argv[2]);
+
         if (file_in.is_open()) {
             std::cin.rdbuf(file_in.rdbuf());
             std::cerr << "Using " << argv[2] << "..." << std::endl;
