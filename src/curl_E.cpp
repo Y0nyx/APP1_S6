@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <cstring>
 
 #include <vector>
 
@@ -21,16 +22,16 @@ public:
         data_.resize(100 * 100 * 100 * 3);
     }
 
-    float& operator()(int i, int j, int k, int c) {
+    double& operator()(int i, int j, int k, int c) {
         return data_[i + j * 100 + k * 100 * 100 + c * 100 * 100 * 100];
     }
 
-    const float& operator()(int i, int j, int k, int c) const {
+    const double& operator()(int i, int j, int k, int c) const {
         return data_[i + j * 100 + k * 100 * 100 + c * 100 * 100 * 100];
     }
 
     double* data() {
-        return reinterpret_cast<double*>(data_.data());
+        return data_.data();
     }
 
     size_t size() const {
@@ -38,7 +39,7 @@ public:
     }
 
 private:
-    std::vector<float> data_;
+    std::vector<double> data_;
 };
 
 Array4D input_array(double* mtx, int dim1, int dim2, int dim3, int dim4) {
@@ -120,14 +121,13 @@ Array4D curl_E(const Array4D E) {
 Array4D wait_signal()
 {
     std::string msg;
-    std::cin >> msg;
-    std::cerr << "curl-E: Got signal." << std::endl;
+    std::getline(std::cin, msg);
+    std::cerr << "curl-E: Got signal : " << msg.data() << std::endl;
 }
 
 void ack_signal()
 {
-    // Répond avec un message vide.
-    std::cout << "" << std::endl;
+    std::cout << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -139,11 +139,12 @@ int main(int argc, char** argv) {
     
     wait_signal();
 
-    memset(buffer_, 0, SHAPE);
+    std::cerr << "curl-E:  try to open file" << std::endl;
     FILE* shm_f = fopen(argv[1], "w");
     if (shm_f == nullptr) {
         std::cerr << "curl-E:  File nullptr" << std::endl;
     }
+    memset(buffer_, 0, SHAPE);
     fwrite(buffer_, sizeof(char), SHAPE, shm_f);
 
 
@@ -173,7 +174,7 @@ int main(int argc, char** argv) {
         std::cerr << "curl_E: execute curl_E" << std::endl;
 
         Array4D output_array = curl_E(input_array(mtx, 100, 100, 100, 3));
-        mtx = output_array.data();
+        std::memcpy(mtx, output_array.data(), output_array.size() * sizeof(double));
 
         // On signale que le travail est terminé.
         std::cerr << "curl_E: Work done." << std::endl;

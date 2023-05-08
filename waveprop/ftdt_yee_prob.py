@@ -20,11 +20,11 @@ def signal_and_wait(subprocs):
     subprocs[0].stdin.write("START\n".encode())
     subprocs[0].stdin.flush()
 
-    #subprocs[1].stdin.write("START\n".encode())
-    #subprocs[1].stdin.flush()
+    subprocs[1].stdin.write("START\n".encode())
+    subprocs[1].stdin.flush()
     
-    H_res = subprocs[0].stdout.readline()
-    #E_res = subprocs[1].stdout.readline()
+    subprocs[0].stdout.readline()
+    subprocs[1].stdout.readline()
 
 
 def timestep(E, H, courant_number, source_pos, source_val, curl_E, curl_H):
@@ -85,11 +85,11 @@ if __name__ == "__main__":
 
     shm_f1 = open(FNAME_1, "r+b")
     shm_mm_1 = mmap.mmap(shm_f1.fileno(), 0)
-    #shm_f2 = open(FNAME_2, "r+b")
-    #shm_mm_2 = mmap.mmap(shm_f2.fileno(), 0)
+    shm_f2 = open(FNAME_2, "r+b")
+    shm_mm_2 = mmap.mmap(shm_f2.fileno(), 0)
 
     curl_H = np.ndarray(shape=SHAPE, dtype=np.float64, buffer=shm_mm_1)
-    #curl_E = np.ndarray(shape=SHAPE, dtype=np.float64, buffer=shm_mm_2)
+    curl_E = np.ndarray(shape=SHAPE, dtype=np.float64, buffer=shm_mm_2)
 
     curl_H = H
     curl_E = E
@@ -105,8 +105,9 @@ if __name__ == "__main__":
         curl_H = H_return
         curl_E = E_return
     
+    shm_mm_1.close()
+    shm_mm_2.close()
+    
     for sub in subprocs:
         sub.kill()
 
-    shm_mm1.close()
-    shm_mm2.close()

@@ -7,13 +7,14 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <cstring>
 
 #include <vector>
 
 static const int MATRIX_SIZE = 100;
 static const int SHAPE = MATRIX_SIZE * MATRIX_SIZE * MATRIX_SIZE * 3 * sizeof(double);
 
-char buffer_[SHAPE];
+double buffer_[SHAPE];
 
 class Array4D {
 public:
@@ -21,16 +22,16 @@ public:
         data_.resize(100 * 100 * 100 * 3);
     }
 
-    float& operator()(int i, int j, int k, int c) {
+    double& operator()(int i, int j, int k, int c) {
         return data_[i + j * 100 + k * 100 * 100 + c * 100 * 100 * 100];
     }
 
-    const float& operator()(int i, int j, int k, int c) const {
+    const double& operator()(int i, int j, int k, int c) const {
         return data_[i + j * 100 + k * 100 * 100 + c * 100 * 100 * 100];
     }
 
     double* data() {
-        return reinterpret_cast<double*>(data_.data());
+        return data_.data();
     }
 
     size_t size() const {
@@ -38,7 +39,7 @@ public:
     }
 
 private:
-    std::vector<float> data_;
+    std::vector<double> data_;
 };
 
 Array4D input_array(double* mtx, int dim1, int dim2, int dim3, int dim4) {
@@ -119,14 +120,13 @@ Array4D curl_H(const Array4D H) {
 Array4D wait_signal()
 {
     std::string msg;
-    std::cin >> msg;
-    std::cerr << "curl-H: Got signal." << std::endl;
+    std::getline(std::cin, msg);
+    std::cerr << "curl-H: Got signal : " << msg.data() << std::endl;
 }
 
 void ack_signal()
 {
-    // Répond avec un message vide.
-    std::cout << "" << std::endl;
+    std::cout << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -138,12 +138,14 @@ int main(int argc, char** argv) {
     
     wait_signal();
 
-    memset(buffer_, 0, SHAPE);
+    std::cerr << "curl-H:  try to open file" << std::endl;
     FILE* shm_f = fopen(argv[1], "w");
     if (shm_f == nullptr) {
-        std::cerr << "curl-E:  File nullptr" << std::endl;
+        std::cerr << "curl-H:  File nullptr" << std::endl;
     }
-    fwrite(buffer_, sizeof(char), SHAPE, shm_f);
+
+    memset(buffer_, 0, SHAPE);
+    fwrite(buffer_, sizeof(double), SHAPE, shm_f);
 
     // On signale que le fichier est pret
     std::cerr << "curl-H:  File ready." << std::endl;
@@ -169,7 +171,8 @@ int main(int argc, char** argv) {
         std::cerr << "curl_H: execute curl_H" << std::endl;
 
         Array4D output_array = curl_H(input_array(mtx, 100, 100, 100, 3));
-        mtx = output_array.data();
+        std::memcpy(mtx, output_array.data(), output_array.size() * sizeof(double));
+
 
         // On signale que le travail est terminé.
         std::cerr << "curl_H: Work done." << std::endl;
