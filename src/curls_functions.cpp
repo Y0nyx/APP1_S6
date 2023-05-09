@@ -8,6 +8,8 @@
 #include <omp.h>
 #include <cstring>
 
+static const int MATRIX_SIZE = 100;
+
 void curl_E(double* E, double* curl_E_out, int nx, int ny, int nz) {
     int i, j, k;
     #pragma omp parallel for private(i, j, k) shared(E, curl_E_out)
@@ -115,20 +117,17 @@ int main() {
     int function_choice;
     std::cin >> function_choice;
 
-    int nx, ny, nz;
-    std::cin >> nx >> ny >> nz;
-
-    std::vector<double> input_data(nx * ny * nz * 3);
-    std::vector<double> output_data(nx * ny * nz * 3);
+    std::vector<double> input_data(MATRIX_SIZE * MATRIX_SIZE * MATRIX_SIZE * 3);
+    std::vector<double> output_data(MATRIX_SIZE * MATRIX_SIZE * MATRIX_SIZE * 3);
 
     for (size_t i = 0; i < input_data.size(); ++i) {
         std::cin >> input_data[i];
     }
 
     if (function_choice == 0) {
-        curl_E(input_data.data(), output_data.data(), nx, ny, nz);
+        curl_E(input_data.data(), output_data.data(), MATRIX_SIZE, MATRIX_SIZE, MATRIX_SIZE);
     } else {
-        curl_H(input_data.data(), output_data.data(), nx, ny, nz);
+        curl_H(input_data.data(), output_data.data(), MATRIX_SIZE, MATRIX_SIZE, MATRIX_SIZE);
     }
 
     for (const auto &value : output_data) {

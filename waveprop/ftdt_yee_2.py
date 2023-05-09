@@ -4,28 +4,30 @@ import fiddle
 import numpy as np
 from subprocess import Popen, PIPE
 
-def curl_E(E):
+# DEFINE
+CURL_E = "0\n"
+CURL_H = "1\n"
+
+def run_curls_functions(input_str):
     process = Popen(["./curls_functions"], stdin=PIPE, stdout=PIPE, text=True)
-    input_str = "0\n" + f"{E.shape[0]} {E.shape[1]} {E.shape[2]}\n"
-    input_str += " ".join(str(x) for x in E.flatten())
-
     output_str, _ = process.communicate(input_str)
-    output_values = np.fromstring(output_str, sep=" ").reshape(E.shape)
+    return output_str
 
+
+def curl_E(E):
+    input_str = CURL_E
+    input_str += " ".join(str(x) for x in E.flatten())
+    output_str = run_curls_functions(input_str)
+    output_values = np.fromstring(output_str, sep=" ").reshape(E.shape)
     return output_values
+
 
 def curl_H(H):
-    process = Popen(["./curls_functions"], stdin=PIPE, stdout=PIPE, text=True)
-    input_str = "1\n" + f"{H.shape[0]} {H.shape[1]} {H.shape[2]}\n"
+    input_str = CURL_H
     input_str += " ".join(str(x) for x in H.flatten())
-
-    output_str, _ = process.communicate(input_str)
+    output_str = run_curls_functions(input_str)
     output_values = np.fromstring(output_str, sep=" ").reshape(H.shape)
-
     return output_values
-
-# The rest of your Python code...
-
 
 
 def timestep(E, H, courant_number, source_pos, source_val):

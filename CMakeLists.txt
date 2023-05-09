@@ -27,9 +27,16 @@ target_link_libraries(lab_ex2 pthread)
 target_link_libraries(lab_ex3 pthread)
 target_link_libraries(curl_E pthread)
 target_link_libraries(curl_H pthread)
-target_link_libraries(curls_functions pthread)
 
+# Find OpenMP package
+find_package(OpenMP)
 
-# Lab - executable pour partie Python
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(curls_functions PUBLIC pthread OpenMP::OpenMP_CXX)
+else()
+    target_link_libraries(curls_functions pthread)
+endif()
+
+# Lab - executable for Python part
 add_executable(lab_ex4 src/lab_ex4.cpp)
 target_link_libraries(lab_ex4 pthread)
