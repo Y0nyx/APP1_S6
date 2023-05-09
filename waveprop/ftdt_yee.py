@@ -44,7 +44,7 @@ class WaveEquation:
         self.source = source
         self.index = 0
 
-    def __call__(self, figure, field_component, slice, slice_index, initial=False):
+    def __call__(self, figure, field_component, slice, slice_index, initial=False, validation=True):
         if field_component < 3:
             field = self.E
         else:
@@ -65,7 +65,7 @@ class WaveEquation:
         else:
             self.image.set_data(field)
 
-        if self.index == 50:
+        if self.index == 50 and validation:
             print("matrice E : ", self.E)
             print("matrice H : ", self.H)
         self.index += 1
