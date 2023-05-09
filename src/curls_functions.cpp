@@ -20,7 +20,7 @@ void curl_E(double* E, double* curl_E_out, int nx, int ny, int nz) {
                 }
             }
         }
-
+        #pragma omp parallel for private(i, j, k) shared(E, curl_E_out)
         for(i = 0; i < nx; i++){
             for(j = 0; j < ny; j++){
                 for(k = 0; k < nz - 1; k++){
@@ -28,7 +28,7 @@ void curl_E(double* E, double* curl_E_out, int nx, int ny, int nz) {
                 }
             }
         }
-
+        #pragma omp parallel for private(i, j, k) shared(E, curl_E_out)
         for(i = 0; i < nx; i++){
             for(j = 0; j < ny; j++){
                 for(k = 0; k < nz - 1; k++){
@@ -36,7 +36,7 @@ void curl_E(double* E, double* curl_E_out, int nx, int ny, int nz) {
                 }
             }
         }
-
+        #pragma omp parallel for private(i, j, k) shared(E, curl_E_out)
         for(i = 0; i < nx - 1; i++){
             for(j = 0; j < ny; j++){
                 for(k = 0; k < nz; k++){
@@ -44,7 +44,7 @@ void curl_E(double* E, double* curl_E_out, int nx, int ny, int nz) {
                 }
             }
         }
-
+        #pragma omp parallel for private(i, j, k) shared(E, curl_E_out)
         for(i = 0; i < nx - 1; i++){
             for(j = 0; j < ny; j++){
                 for(k = 0; k < nz; k++){
@@ -52,7 +52,7 @@ void curl_E(double* E, double* curl_E_out, int nx, int ny, int nz) {
                 }
             }
         }
-
+        #pragma omp parallel for private(i, j, k) shared(E, curl_E_out)
         for(i = 0; i < nx; i++){
             for(j = 0; j < ny - 1; j++){
                 for(k = 0; k < nz; k++){
@@ -73,7 +73,7 @@ void curl_H(double* H, double* curl_H_out, int nx, int ny, int nz) {
                 }
             }
         }
-
+        #pragma omp parallel for private(i, j, k) shared(E, curl_E_out)
         for(i = 0; i < nx; i++){
             for(j = 0; j < ny; j++){
                 for(k = 1; k < nz; k++){
@@ -81,7 +81,7 @@ void curl_H(double* H, double* curl_H_out, int nx, int ny, int nz) {
                 }
             }
         }
-
+        #pragma omp parallel for private(i, j, k) shared(E, curl_E_out)
         for(i = 0; i < nx; i++){
             for(j = 0; j < ny; j++){
                 for(k = 1; k < nz; k++){
@@ -89,7 +89,7 @@ void curl_H(double* H, double* curl_H_out, int nx, int ny, int nz) {
                 }
             }
         }
-
+        #pragma omp parallel for private(i, j, k) shared(E, curl_E_out)
         for(i = 1; i < nx; i++){
             for(j = 0; j < ny; j++){
                 for(k = 0; k < nz; k++){
@@ -97,7 +97,7 @@ void curl_H(double* H, double* curl_H_out, int nx, int ny, int nz) {
                 }
             }
         }
-
+        #pragma omp parallel for private(i, j, k) shared(E, curl_E_out)
         for(i = 1; i < nx; i++){
             for(j = 0; j < ny; j++){
                 for(k = 0; k < nz; k++){
@@ -105,7 +105,7 @@ void curl_H(double* H, double* curl_H_out, int nx, int ny, int nz) {
                 }
             }
         }
-
+        #pragma omp parallel for private(i, j, k) shared(E, curl_E_out)
         for(i = 0; i < nx; i++){
             for(j = 1; j < ny; j++){
                 for(k = 0; k < nz; k++){

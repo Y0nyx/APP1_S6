@@ -64,6 +64,10 @@ class WaveEquation:
             self.image = axes.imshow(field, vmin=-1e-2, vmax=1e-2)
         else:
             self.image.set_data(field)
+
+        if self.index == 50:
+            print("matrice E : ", self.E)
+            print("matrice H : ", self.H)
         self.index += 1
 
 
