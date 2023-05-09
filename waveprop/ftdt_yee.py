@@ -76,16 +76,17 @@ if __name__ == "__main__":
     def source(index):
         return ([n // 3], [n // 3], [n // 2],[0]), 0.1*numpy.sin(0.1 * index)
 
-    w = WaveEquation((n, n, n), courant_number, source)
+    # w = WaveEquation((n, n, n), courant_number, source)
 
-    for i in range(0, 50) :
-        source_pos, source_index = source(i)
-        w.E, w.H = timestep(w.E, w.H, courant_number, source_pos, source_index)
-        if i == 49:
-            print(source_pos[0], source_pos[1])
+    # for i in range(0, 50) :
+    #    source_pos, source_index = source(i)
+    #    w.E, w.H = timestep(w.E, w.H, courant_number, source_pos, source_index)
+    #    if i == 49:
+    #        print(source_pos[0], source_pos[1])
 
-        #w = WaveEquation((n, n, n), 0.1, source)
-        #fiddle.fiddle(w, [('field component', {'Ex': 0, 'Ey': 1, 'Ez': 2, 'Hx': 3, 'Hy': 4, 'Hz': 5}),
-                          #lice', {'XY': 2, 'YZ': 0, 'XZ': 1}), ('slice index', 0, n - 1, n // 2, 1)],
-                      #update_interval=0.01)
+    w = WaveEquation((n, n, n), 0.1, source)
+    fiddle.fiddle(w, [('field component',{'Ex':0,'Ey':1,'Ez':2, 'Hx':3,'Hy':4,'Hz':5}),('slice',{'XY':2,'YZ':0,'XZ':1}),('slice index',0,n-1,n//2,1)], update_interval=0.01)
+
+
+
 
