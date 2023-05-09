@@ -9,6 +9,7 @@
 #include <vector>
 #include <queue>
 #include <unordered_map>
+#include <map>
 #include <string>
 #include <cstring>
 #include <thread>
@@ -28,6 +29,8 @@ using PNGDataPtr = std::shared_ptr<PNGDataVec>;
 // Add necessary variable to safely multi-thread the process
 std::mutex mtx_queue;
 std::condition_variable cv_queue;
+
+std::mutex mtx_hashmap;
 
 /// \brief Wraps callbacks from stbi_image_write
 //
@@ -109,6 +112,7 @@ struct TaskDef
     std::string fname_in;
     std::string fname_out; 
     int size;
+    PNGDataPtr png_cached_Data;
 };
 
 /// \brief A class representing the processing of one SVG file to a PNG stream.
@@ -138,13 +142,15 @@ public:
 
         std::cerr << "Running for "
                   << fname_in 
-                  << "..." 
                   << std::endl;
 
         NSVGimage*          image_in        = nullptr;
         NSVGrasterizer*     rast            = nullptr;
 
         try {
+
+
+
             // Read the file ...
             image_in = nsvgParseFromFile(fname_in.c_str(), "px", 0);
             if (image_in == nullptr) {
@@ -216,13 +222,15 @@ private:
     std::queue<TaskDef> task_queue_;
 
     // The cache hash map (TODO). Note that we use the string definition as the // key.
-    using PNGHashMap = std::unordered_map<std::string, PNGDataPtr>;
-    PNGHashMap png_cache_;
+    using Map = std::unordered_map<std::string, std::string>;
+    Map png_cache_;
 
     bool should_run_;           // Used to signal the end of the processor to
                                 // threads.
 
     std::vector<std::thread> queue_threads_;
+
+    std::unordered_map<std::string, TaskDef> output_cache_;
 
 public:
     /// \brief Default constructor.
@@ -243,17 +251,23 @@ public:
             n_threads = NUM_THREADS;
         }
 
-        for (int i = 0; i < n_threads; ++i) {
+        
+    }
+
+    void StartTread()
+    {
+        for (int i = 0; i < NUM_THREADS; ++i) {
             queue_threads_.push_back(
                 std::thread(&Processor::processQueue, this)
             );
         }
-    }
-
+    }    
+    
     ~Processor()
     {
         should_run_ = false;
         for (auto& qthread: queue_threads_) {
+            cv_queue.notify_all();
             qthread.join();
         }
     }
@@ -320,18 +334,32 @@ public:
             //add lock guard on task_queue 
             std::lock_guard<std::mutex> lock(mtx_queue);
 
-            if (png_cache_.count(line_org) == 0) {
-                std::cerr << "Queueing task '" << line_org << "'." << std::endl;
+            this->output_cache_[def.fname_out] = def;
+
+            std::string png_input = def.fname_in + std::to_string(def.size);
+
+            if (png_cache_.find(png_input) == png_cache_.end())
+            {
+                std::cerr << " Queueing task '" << line_org << std::endl;
+ 
                 task_queue_.push(def);
                 cv_queue.notify_one();
 
-                png_cache_.insert({line_org, nullptr});
+                png_cache_.insert({png_input, def.fname_out});
 
-            } else {
-                std::cerr << "Task already done" << std::endl;
+            }
+            else
+            {
+                std::cerr << " Task already done" << std::endl;
             }
         }
     }
+
+    // void SameOutputPush(){
+    //     for (const auto& item : output_cache_) {
+    //         task_queue_.push(item.second);
+    //     }       
+    // }
 
     /// \brief Returns if the internal queue is empty (true) or not.
     bool queueEmpty()
@@ -345,19 +373,30 @@ private:
     {
         while (should_run_) {
             std::unique_lock<std::mutex> lock(mtx_queue);
-            cv_queue.wait(lock, [this]{return !task_queue_.empty(); });
+            cv_queue.wait(lock, [this]{return !task_queue_.empty() || !should_run_; });
 
-            TaskDef task_def = task_queue_.front();
-            task_queue_.pop();
+            if(!task_queue_.empty())
+            {
+                TaskDef task_def = task_queue_.front();
+                task_queue_.pop();
+                lock.unlock();
+                cv_queue.notify_one();
+                
+                if(task_queue_.empty()) 
+                {
+                    should_run_ = false;
+                    cv_queue.notify_one();
+                }
 
-            lock.unlock();
-
-            TaskRunner runner(task_def);
-            runner();
-
-            if(task_queue_.empty()) {
-                should_run_ = false;
+                TaskRunner runner(task_def);
+                runner();
             }
+            else
+            {
+                lock.unlock();
+                cv_queue.notify_one();
+            }
+
         }
     }
 };
@@ -371,11 +410,11 @@ int main(int argc, char** argv)
     std::ifstream file_in;
     int num_threads = NUM_THREADS;
 
-    if (argc >= 3 && (strcmp(argv[2], "-") != 0)) {
+    if (argc >= 3 && (strcmp(argv[1], "-") != 0)) {
         file_in.open(argv[2]);
         if (file_in.is_open()) {
             std::cin.rdbuf(file_in.rdbuf());
-            std::cerr << "Using " << argv[2] << "..." << std::endl;
+            std::cerr << " Using " << argv[2] << "..." << std::endl;
         } else {
             std::cerr   << "Error: Cannot open '"
                         << argv[2] 
@@ -387,7 +426,7 @@ int main(int argc, char** argv)
     }
 
     //change the number of threads from args.
-    if (argc >= 2) {
+    if (argc >= 2 && (strcmp(argv[1], "-") != 0)) {
         try {
         num_threads = std::stoi(argv[1]);
         std::cerr << "Unsing num_threads equal to : " << num_threads << std::endl;
@@ -406,6 +445,10 @@ int main(int argc, char** argv)
             proc.parseAndQueue(line);
         }
     }
+
+    // proc.SameOutputPush();
+
+    proc.StartTread(); 
 
     if (file_in.is_open()) {
         file_in.close();
