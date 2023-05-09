@@ -20,12 +20,15 @@ add_executable(lab_ex2 src/lab_ex2.cpp)
 add_executable(lab_ex3 src/lab_ex3.cpp)
 add_executable(curl_E src/curl_E.cpp)
 add_executable(curl_H src/curl_H.cpp)
+add_executable(curls_functions src/curls_functions.cpp)
 
 target_link_libraries(lab_ex1 pthread)
 target_link_libraries(lab_ex2 pthread)
 target_link_libraries(lab_ex3 pthread)
 target_link_libraries(curl_E pthread)
 target_link_libraries(curl_H pthread)
+target_link_libraries(curls_functions pthread)
+
 
 # Lab - executable pour partie Python
 add_executable(lab_ex4 src/lab_ex4.cpp)

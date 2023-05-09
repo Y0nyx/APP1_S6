@@ -46,9 +46,16 @@ int main(int argc, char** argv)
 
     // Création d'un fichier "vide" (le fichier doit exister et être d'une
     // taille suffisante avant d'utiliser mmap).
-    memset(buffer_, 0, BUFFER_SIZE);
-    FILE* shm_f = fopen(argv[1], "w");
-    fwrite(buffer_, sizeof(char), BUFFER_SIZE, shm_f);
+    memset(buffer_, 0, SHAPE);
+    FILE* shm_f = fopen(argv[1], "w+b");
+    if (shm_f == nullptr) {
+        std::cerr << "curl-E:  File nullptr" << std::endl;
+    }
+    size_t bytes_written = fwrite(buffer_, sizeof(char), SHAPE, shm_f);
+    if (bytes_written != SHAPE) {
+        std::cerr << "curl-E:  bytes written not right size" << std::endl;
+    }
+
     fclose(shm_f);
 
     // On signale que le fichier est prêt.

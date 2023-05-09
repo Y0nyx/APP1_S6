@@ -19,58 +19,61 @@ private:
     std::vector<float> data_;
 };
 
-Array4D curl_E(const Array4D& E) {
+Array4D curl_E(const Array4D& E, int separation) {
     Array4D curl_E;
     
-    // curl_E[:, :-1, :, 0] += E[:, 1:, :, 2] - E[:, :-1, :, 2]
-    for(int i = 0; i < 100; i++){
-        for(int j = 0; j < 99; j++) {
-            for(int k = 0; k < 100; k++) {
-                curl_E(i, j, k, 0) += E(i, j+1, k, 2) - E(i, j, k, 2);
+    if (separation == 0) {
+        // curl_E[:, :-1, :, 0] += E[:, 1:, :, 2] - E[:, :-1, :, 2]
+        for(int i = 0; i < 100; i++){
+            for(int j = 0; j < 99; j++) {
+                for(int k = 0; k < 100; k++) {
+                    curl_E(i, j, k, 0) += E(i, j+1, k, 2) - E(i, j, k, 2);
+                }
             }
         }
-    }
 
-    // curl_E[:, :, :-1, 0] -= E[:, :, 1:, 1] - E[:, :, :-1, 1]
-    for(int i = 0; i < 100; i++){
-        for(int j = 0; j < 100; j++) {
-            for(int k = 0; k < 99; k++) {
-                curl_E(i, j, k, 0) += E(i, j, k+1, 1) - E(i, j, k, 1);
+        // curl_E[:, :, :-1, 0] -= E[:, :, 1:, 1] - E[:, :, :-1, 1]
+        for(int i = 0; i < 100; i++){
+            for(int j = 0; j < 100; j++) {
+                for(int k = 0; k < 99; k++) {
+                    curl_E(i, j, k, 0) += E(i, j, k+1, 1) - E(i, j, k, 1);
+                }
             }
         }
-    }
+    } else if (separation == 1) {
+        // curl_E[:, :, :-1, 1] += E[:, :, 1:, 0] - E[:, :, :-1, 0]
+        for(int i = 0; i < 100; i++){
+            for(int j = 0; j < 100; j++) {
+                for(int k = 0; k < 99; k++) {
+                    curl_E(i, j, k, 1) += E(i, j, k+1, 0) - E(i, j, k, 0);
+                }
+            }
+        }
 
-    // curl_E[:, :, :-1, 1] += E[:, :, 1:, 0] - E[:, :, :-1, 0]
-    for(int i = 0; i < 100; i++){
-        for(int j = 0; j < 100; j++) {
-            for(int k = 0; k < 99; k++) {
-                curl_E(i, j, k, 1) += E(i, j, k+1, 0) - E(i, j, k, 0);
+        // curl_E[:-1, :, :, 1] -= E[1:, :, :, 2] - E[:-1, :, :, 2]
+        for(int i = 1; i < 100; i++){
+            for(int j = 0; j < 100; j++) {
+                for(int k = 0; k < 100; k++) {
+                    curl_E(i-1, j, k, 1) -= E(i, j, k, 2) - E(i-1, j, k, 2);
+                }
             }
         }
-    }
+    } else if (separation == 2) {
+        // curl_E[:-1, :, :, 2] += E[1:, :, :, 1] - E[:-1, :, :, 1]
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < 100; j++) {
+                for (int k = 0; k < 99; k++) {
+                    curl_E(i, j, k, 2) += E(i+1, j, k, 1) - E(i, j, k, 1);
+                }
+            }
+        }
 
-    // curl_E[:-1, :, :, 1] -= E[1:, :, :, 2] - E[:-1, :, :, 2]
-    for(int i = 1; i < 100; i++){
-        for(int j = 0; j < 100; j++) {
-            for(int k = 0; k < 100; k++) {
-                curl_E(i-1, j, k, 1) -= E(i, j, k, 2) - E(i-1, j, k, 2);
-            }
-        }
-    }
-    // curl_E[:-1, :, :, 2] += E[1:, :, :, 1] - E[:-1, :, :, 1]
-    for (int i = 0; i < 100; i++) {
-        for (int j = 0; j < 100; j++) {
-            for (int k = 0; k < 99; k++) {
-                curl_E(i, j, k, 2) += E(i+1, j, k, 1) - E(i, j, k, 1);
-            }
-        }
-    }
-
-    // curl_E[:, :-1, :, 2] -= E[:, 1:, :, 0] - E[:, :-1, :, 0]
-    for (int i = 0; i < 100; i++) {
-        for (int j = 0; j < 99; j++) {
-            for (int k = 0; k < 100; k++) {
-                curl_E(i, j, k, 2) -= E(i, j+1, k, 0) - E(i, j, k, 0);
+        // curl_E[:, :-1, :, 2] -= E[:, 1:, :, 0] - E[:, :-1, :, 0]
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < 99; j++) {
+                for (int k = 0; k < 100; k++) {
+                    curl_E(i, j, k, 2) -= E(i, j+1, k, 0) - E(i, j, k, 0);
+                }
             }
         }
     }

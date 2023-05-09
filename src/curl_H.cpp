@@ -11,23 +11,23 @@
 
 #include <vector>
 
-static const int MATRIX_SIZE = 100;
+static const int MATRIX_SIZE = 50;
 static const int SHAPE = MATRIX_SIZE * MATRIX_SIZE * MATRIX_SIZE * 3 * sizeof(double);
 
-double buffer_[SHAPE];
+char buffer_[SHAPE];
 
 class Array4D {
 public:
     Array4D() {
-        data_.resize(100 * 100 * 100 * 3);
+        data_.resize(MATRIX_SIZE * MATRIX_SIZE * MATRIX_SIZE * 3);
     }
 
     double& operator()(int i, int j, int k, int c) {
-        return data_[i + j * 100 + k * 100 * 100 + c * 100 * 100 * 100];
+        return data_[i + j * MATRIX_SIZE + k * MATRIX_SIZE * MATRIX_SIZE + c * MATRIX_SIZE * MATRIX_SIZE * MATRIX_SIZE];
     }
 
     const double& operator()(int i, int j, int k, int c) const {
-        return data_[i + j * 100 + k * 100 * 100 + c * 100 * 100 * 100];
+        return data_[i + j * MATRIX_SIZE + k * MATRIX_SIZE * MATRIX_SIZE + c * MATRIX_SIZE * MATRIX_SIZE * MATRIX_SIZE];
     }
 
     double* data() {
@@ -42,13 +42,13 @@ private:
     std::vector<double> data_;
 };
 
-Array4D input_array(double* mtx, int dim1, int dim2, int dim3, int dim4) {
+Array4D input_array(double* mtx) {
     Array4D arr;
     int count = 0;
-    for (int c = 0; c < dim4; c++) {
-        for (int k = 0; k < dim3; k++) {
-            for (int j = 0; j < dim2; j++) {
-                for (int i = 0; i < dim1; i++) {
+    for (int c = 0; c < MATRIX_SIZE; c++) {
+        for (int k = 0; k < MATRIX_SIZE; k++) {
+            for (int j = 0; j < MATRIX_SIZE; j++) {
+                for (int i = 0; i < 3; i++) {
                     arr(i, j, k, c) = static_cast<float>(mtx[count]);
                     count++;
                 }
@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
     }
 
     memset(buffer_, 0, SHAPE);
-    fwrite(buffer_, sizeof(double), SHAPE, shm_f);
+    fwrite(buffer_, sizeof(char), SHAPE, shm_f);
 
     // On signale que le fichier est pret
     std::cerr << "curl-H:  File ready." << std::endl;
@@ -170,7 +170,7 @@ int main(int argc, char** argv) {
         wait_signal();
         std::cerr << "curl_H: execute curl_H" << std::endl;
 
-        Array4D output_array = curl_H(input_array(mtx, 100, 100, 100, 3));
+        Array4D output_array = curl_H(input_array(mtx));
         std::memcpy(mtx, output_array.data(), output_array.size() * sizeof(double));
 
 
